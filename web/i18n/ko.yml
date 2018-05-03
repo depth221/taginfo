@@ -568,7 +568,7 @@ reports:
         name: 언어
         intro: |
             OpenStreetMap은 국제적인 프로젝트입니다. 태그와 태그의 설명은 어떠한 언어로든 가능합니다.
-            이 표는 taginfo가 알고  각각의 언어에 키와 태그를 문서화한 위키 문서가 얼마나 많은지를 나타냅니다.
+            이 표는 taginfo가 알고 있는 각각의 언어에 키와 태그를 문서화한 위키 문서가 얼마나 많은지를 나타냅니다.
         code: 코드
         native_name: 현지 이름
         english_name: 영어 이름
