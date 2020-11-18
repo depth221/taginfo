@@ -50,7 +50,7 @@ var create_flexigrid_for = {
                         hover_expand(link_to_value(key, row.value)),
                         fmt_value_with_percent(row.count, row.fraction),
                         link_to_tag_with_tab(key, row.value, 'wiki', fmt_checkmark(row.in_wiki)),
-                        html_escape(row.description)
+                        fmt_desc(row.desclang, row.descdir, row.description)
                     ] };
                 });
                 delete data.data;
@@ -108,6 +108,11 @@ var create_flexigrid_for = {
             }
         });
     },
+    chronology: function(key) {
+        jQuery.getJSON('/api/4/key/chronology?key=' + encodeURIComponent(key), function(data) {
+            draw_chronology_chart(data.data, filter.value);
+        });
+    },
     wiki: function(key, filter_type) {
         create_flexigrid('grid-wiki', {
             url: '/api/4/key/wiki_pages?key=' + encodeURIComponent(key),
@@ -117,6 +122,7 @@ var create_flexigrid_for = {
                 { display: '<%= h(misc.description) %>', name: 'description', width: 400, sortable: false },
                 { display: '<%= h(misc.image) %>', name: 'image', width: 120, sortable: false },
                 { display: '<%= h(osm.objects) %>', name: 'objects', width:  80, sortable: false },
+                { display: '<span title="<%= h(misc.approval_status) %>"><%= h(misc.status) %></a>', name: 'status', width: 60, sortable: false },
                 { display: '<%= h(page.wiki_pages.implied_tags) %>', name: 'tags_implied', width: 120, sortable: false },
                 { display: '<%= h(page.wiki_pages.combined_tags) %>', name: 'tags_combination', width: 120, sortable: false },
                 { display: '<%= h(page.wiki_pages.linked_tags) %>', name: 'tags_linked', width: 220, sortable: false }
@@ -126,14 +132,15 @@ var create_flexigrid_for = {
             preProcess: function(data) {
                 data.rows = jQuery.map(data.data, function(row, i) {
                     return { 'cell': [
-                        fmt_language(row.lang, row.language, row.language_en),
+                        fmt_language(row.lang, row.dir, row.language, row.language_en),
                         link_to_wiki(row.title),
-                        html_escape(row.description),
+                        fmt_desc(row.lang, row.dir, row.description),
                         fmt_wiki_image_popup(row.image),
                         fmt_type_icon('node',     row.on_node) +
                         fmt_type_icon('way',      row.on_way) +
                         fmt_type_icon('area',     row.on_area) +
                         fmt_type_icon('relation', row.on_relation),
+                        fmt_status(row.status),
                         fmt_key_or_tag_list(row.tags_implies),
                         fmt_key_or_tag_list(row.tags_combination),
                         fmt_key_or_tag_list(row.tags_linked)
@@ -160,7 +167,7 @@ var create_flexigrid_for = {
             preProcess: function(data) {
                 data.rows = jQuery.map(data.data, function(row, i) {
                     return { 'cell': [
-                        link_to_project(row.project_id, row.project_name, row.project_icon_url),
+                        link_to_project(row.project_id, row.project_name),
                         row.value === null ? (link_to_key(row.key) + '=*') : link_to_tag(row.key, row.value),
                         fmt_type_icon('node',     row.on_node) +
                         fmt_type_icon('way',      row.on_way) +
@@ -182,35 +189,36 @@ function create_chart(params) {
         y += d['count'];
     });
 
-    var scale = d3.scale.linear()
+    var scale = d3.scaleLinear()
                     .domain([0, params.max])
                     .range([0, params.height]);
 
-    var color = d3.scale.ordinal()
+    var color = d3.scaleOrdinal()
                     .range(d3_colors());
 
     var chart = d3.select('#canvas-values').append('svg')
-                    .attr("width", params.width)
-                    .attr("height", params.height);
+                    .attr('width', params.width)
+                    .attr('height', params.height);
 
-    chart.selectAll("rect")
+    chart.selectAll('rect')
         .data(params.data)
         .enter()
-        .append("svg:a")
-            .attr('xlink:href', function(d) { return url_for_tag(params.key, d['value']); })
-            .attr('transform', function(d) { return 'translate(10, ' + scale(d['y']) + ')'; })
+        .append('svg:a')
+            .attr('href', d => url_for_tag(params.key, d['value']))
+            .attr('transform', d => 'translate(10, ' + scale(d['y']) + ')')
             .call(function(c) {
-                c.append("rect")
+                c.append('rect')
                     .attr('width', 20)
-                    .attr('height', function(d) { return scale(d['count']); })
-                    .style('fill', function(d, i) { return color(i); });
+                    .attr('height', d => scale(d['count']))
+                    .style('fill', (d, i) => color(i));
             })
-            .append("text")
+            .append('text')
                 .attr('x', 25)
-                .attr('y', function(d) { return scale(d['count'] / 2); })
+                .attr('y', d => scale(d['count'] / 2))
                 .attr('dy', '0.5em')
-                .text(function(d) { return d['value']; });
+                .text(d => d['value']);
 
+    jQuery('svg a[href$="(other)"]').removeAttr('href').css('text-decoration', 'none');
 }
 
 function page_init() {

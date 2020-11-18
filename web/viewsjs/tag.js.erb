@@ -63,6 +63,11 @@ var create_flexigrid_for = {
             }
         });
     },
+    chronology: function(key, value) {
+        jQuery.getJSON('/api/4/tag/chronology?key=' + encodeURIComponent(key) + '&value=' + encodeURIComponent(value), function(data) {
+            draw_chronology_chart(data.data, filter.value);
+        });
+    },
     wiki: function(key, value) {
         create_flexigrid('grid-wiki', {
             url: '/api/4/tag/wiki_pages?key=' + encodeURIComponent(key) + '&value=' + encodeURIComponent(value),
@@ -72,6 +77,7 @@ var create_flexigrid_for = {
                 { display: '<%= h(misc.description) %>', name: 'description', width: 400, sortable: false },
                 { display: '<%= h(misc.image) %>', name: 'image', width: 120, sortable: false },
                 { display: '<%= h(osm.objects) %>', name: 'objects', width:  80, sortable: false },
+                { display: '<span title="<%= h(misc.approval_status) %>"><%= h(misc.status) %></a>', name: 'status', width: 60, sortable: false },
                 { display: '<%= h(page.wiki_pages.implied_tags) %>', name: 'tags_implied', width: 120, sortable: false },
                 { display: '<%= h(page.wiki_pages.combined_tags) %>', name: 'tags_combination', width: 120, sortable: false },
                 { display: '<%= h(page.wiki_pages.linked_tags) %>', name: 'tags_linked', width: 220, sortable: false }
@@ -81,14 +87,15 @@ var create_flexigrid_for = {
             preProcess: function(data) {
                 data.rows = jQuery.map(data.data, function(row, i) {
                     return { 'cell': [
-                        fmt_language(row.lang, row.language, row.language_en),
+                        fmt_language(row.lang, row.dir, row.language, row.language_en),
                         link_to_wiki(row.title),
-                        html_escape(row.description),
+                        fmt_desc(row.lang, row.dir, row.description),
                         fmt_wiki_image_popup(row.image),
                         fmt_type_icon('node',     row.on_node) +
                         fmt_type_icon('way',      row.on_way) +
                         fmt_type_icon('area',     row.on_area) +
                         fmt_type_icon('relation', row.on_relation),
+                        fmt_status(row.status),
                         fmt_key_or_tag_list(row.tags_implies),
                         fmt_key_or_tag_list(row.tags_combination),
                         fmt_key_or_tag_list(row.tags_linked)
@@ -115,7 +122,7 @@ var create_flexigrid_for = {
             preProcess: function(data) {
                 data.rows = jQuery.map(data.data, function(row, i) {
                     return { 'cell': [
-                        link_to_project(row.project_id, row.project_name, row.project_icon_url),
+                        link_to_project(row.project_id, row.project_name),
                         row.value === null ? (link_to_key(row.key) + '=*') : link_to_tag(row.key, row.value),
                         fmt_type_icon('node',     row.on_node) +
                         fmt_type_icon('way',      row.on_way) +

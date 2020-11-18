@@ -195,14 +195,16 @@ class Taginfo < Sinatra::Base
             [:value,       :STRING, 'Value'],
             [:count,       :INT,    'Number of times this key/value is in the OSM database.'],
             [:fraction,    :FLOAT,  'Number of times in relation to number of times this key is in the OSM database.'],
-            [:in_wiki,     :BOOL,   'Is there at least one wiki page for this tag.'],
+            [:in_wiki,     :BOOL,   'Is there at least one wiki page for this tag?'],
+            [:desclang,    :STRING, 'Language the description of the tag is in.'],
+            [:descdir,     :STRING, 'Writing direction ("ltr", "rtl", or "auto") of description of the tag.'],
             [:description, :STRING, 'Description of the tag from the wiki.']
         ]),
         :example => { :key => 'highway', :page => 1, :rp => 10, :sortname => 'count_ways', :sortorder => 'desc' },
         :ui => '/keys/highway#values'
     }) do
         key = params[:key]
-        lang = params[:lang] || 'en'
+        language = params[:lang] || 'en'
         filter_type = get_filter()
 
         if @ap.sortname == 'count'
@@ -245,24 +247,26 @@ class Taginfo < Sinatra::Base
         wikidesc = {}
 
         if values_with_wiki_page != ''
-            ['en', lang].uniq.each do |lang|
+            ['en', language].uniq.each do |lang|
                 @db.select('SELECT value, description FROM wiki.wikipages').
                     condition('lang = ?', lang).
                     condition('key = ?', key).
                     condition("value IN (#{ values_with_wiki_page })").
                     execute().each do |row|
-                    wikidesc[row['value']] = row['description']
+                    wikidesc[row['value']] = [row['description'], lang, direction_from_lang_code(lang)]
                 end
             end
         end
 
         return generate_json_result(total,
             res.map{ |row| {
-                :value    => row['value'],
-                :count    => row['count_' + filter_type].to_i,
-                :fraction => (row['count_' + filter_type].to_f / this_key_count.to_f).round(4),
-                :in_wiki  => row['in_wiki'] != 0,
-                :description => wikidesc[row['value']] || ''
+                :value       => row['value'],
+                :count       => row['count_' + filter_type].to_i,
+                :fraction    => (row['count_' + filter_type].to_f / this_key_count.to_f).round(4),
+                :in_wiki     => row['in_wiki'] != 0,
+                :description => wikidesc[row['value']] ? wikidesc[row['value']][0] : '',
+                :desclang    => wikidesc[row['value']] ? wikidesc[row['value']][1] : '',
+                :descdir     => wikidesc[row['value']] ? wikidesc[row['value']][2] : ''
             } }
         )
     end
@@ -273,6 +277,7 @@ class Taginfo < Sinatra::Base
         :paging => :no,
         :result => no_paging_results([
             [:lang,             :STRING, 'Language code.'],
+            [:dir,              :STRING, 'Writing direction ("ltr", "rtl", or "auto") of description.'],
             [:language,         :STRING, 'Language name in its language.'],
             [:language_en,      :STRING, 'Language name in English.'],
             [:title,            :STRING, 'Wiki page title.'],
@@ -292,7 +297,8 @@ class Taginfo < Sinatra::Base
             [:on_relation,      :BOOL,   'Is this a key for relations?'],
             [:tags_implies,     :ARRAY_OF_STRINGS, 'List of keys/tags implied by this key.'],
             [:tags_combination, :ARRAY_OF_STRINGS, 'List of keys/tags that can be combined with this key.'],
-            [:tags_linked,      :ARRAY_OF_STRINGS, 'List of keys/tags related to this key.']
+            [:tags_linked,      :ARRAY_OF_STRINGS, 'List of keys/tags related to this key.'],
+            [:status,           :STRING, 'Status of this key/tag.']
         ]),
         :notes => 'To get the complete thumbnail image URL, concatenate <tt>thumb_url_prefix</tt>, width of image in pixels, and <tt>thumb_url_suffix</tt>. The thumbnail image width must be smaller than <tt>width</tt>, use the <tt>image_url</tt> otherwise.',
         :example => { :key => 'highway' },
@@ -334,7 +340,7 @@ class Taginfo < Sinatra::Base
             [:icon_url,         :STRING, 'Icon URL']
         ]),
         :example => { :key => 'highway', :page => 1, :rp => 10, :sortname => 'project_name', :sortorder => 'asc' },
-        :ui => '/keys/highway=residential#projects'
+        :ui => '/keys/highway#projects'
     }) do
         key = params[:key]
         q = like_contains(params[:query])
@@ -381,6 +387,36 @@ class Taginfo < Sinatra::Base
                 :icon_url         => row['icon_url']
             } }
         )
+    end
+
+    api(4, 'key/chronology', {
+        :description => 'Get chronology of key counts.',
+        :parameters => {
+            :key => 'Tag key (required).',
+        },
+        :paging => :no,
+        :result => no_paging_results([
+            [:date,      :TEXT, 'Date in format YYYY-MM-DD.'],
+            [:nodes,     :INT, 'Difference of number of nodes with this key relative to previous entry.'],
+            [:ways,      :INT, 'Difference of number of ways with this key relative to previous entry.'],
+            [:relations, :INT, 'Difference of number of relations with this key relative to previous entry.']
+        ]),
+        :example => { :key => 'highway' },
+        :ui => '/keys/highway#chronology'
+    }) do
+        if not Source.get(:chronology)
+            return generate_json_result(0, []);
+        end
+
+        key = params[:key]
+
+        res = @db.select('SELECT data FROM chronology.keys_chronology').
+            condition('key = ?', key).
+            get_first_value()
+
+        data = unpack_chronology(res)
+
+        return generate_json_result(data.size(), data);
     end
 
 end

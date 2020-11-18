@@ -1,7 +1,7 @@
 # web/lib/ui/compare.rb
 class Taginfo < Sinatra::Base
 
-    get %r{^/compare/(.*)} do |items|
+    get %r{/compare/(.*)} do |items|
         @data = []
 
         if !items.nil?
@@ -27,13 +27,17 @@ class Taginfo < Sinatra::Base
             value = data[:value]
 
             if value.nil?
-                result = @db.select("SELECT count_all, count_nodes, count_ways, count_relations FROM db.keys").condition('key = ?', key).get_first_row()
+                result = @db.select("SELECT count_all, count_nodes, count_ways, count_relations, projects FROM db.keys").condition('key = ?', key).get_first_row()
                 if result
                     data[:count_all]       = result['count_all']
                     data[:count_nodes]     = result['count_nodes']
                     data[:count_ways]      = result['count_ways']
                     data[:count_relations] = result['count_relations']
-                    data[:desc]            = h(get_key_description(r18n.locale.code, key))
+                    data[:projects]        = result['projects']
+                    desc = get_key_description(key)
+                    data[:desc]            = h(desc[0])
+                    data[:lang]            = desc[1]
+                    data[:dir]             = desc[2]
 
                     prevalent_values = @db.select("SELECT value, count, fraction FROM db.prevalent_values").
                         condition('key=?', key).
@@ -55,11 +59,16 @@ class Taginfo < Sinatra::Base
                     data[:count_nodes]     = result['count_nodes']
                     data[:count_ways]      = result['count_ways']
                     data[:count_relations] = result['count_relations']
-                    data[:desc]            = h(get_tag_description(r18n.locale.code, key, value))
+                    desc = get_tag_description(key, value)
+                    data[:desc]            = h(desc[0])
+                    data[:lang]            = desc[1]
+                    data[:dir]             = desc[2]
 
                     data[:prevalent_values] = []
 
                     data[:wiki_pages] = @db.select("SELECT DISTINCT lang FROM wiki.wikipages WHERE key=? AND value=? ORDER BY lang", key, value).execute().map{ |row| row['lang'] }
+
+                    data[:projects] = @db.select("SELECT projects FROM projects.project_unique_tags WHERE key=? AND value=?", key, value).execute().map{ |row| row['projects'] }[0] || 0
 
                     data[:has_map] = (@db.count('tag_distributions').condition('key=? AND value=?', key, value).get_first_i > 0)
                     data

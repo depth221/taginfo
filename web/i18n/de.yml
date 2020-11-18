@@ -41,6 +41,7 @@ taginfo:
     project: Projekt
     projects: Projekte
     test: Test
+    chronology: Chronologie
     map: Karte
     maps: Karten
     relations: Relations
@@ -48,6 +49,7 @@ taginfo:
     key_combinations: Kombinationen
     comparison: Key/Tag-Vergleich
     overview: Übersicht
+    links: Links
     data_from: Daten vom
     data_from_description: Letzte Aktualisierung der taginfo-Datenbank
     instance:
@@ -80,6 +82,8 @@ misc:
     prevalent_values: Häufige Values
     prevalent_values_tooltip: Bis zu zehn der häufigsten Values zu diesem Key (Anzeige nur, wenn mehr als 1% der Tags mit diesem Key auch diesen Value haben).
     in_wiki_tooltip: Zu diesem Key/Tag gibt es mindestens eine Wiki-Seite.
+    status: Status
+    approval_status: Annahme-Status
 
 help:
     search:
@@ -262,6 +266,8 @@ pages:
                 <p>Taginfo bekommt Informationen über die verschiedenen Sprachen dieser Welt, ihre Codes, Namen, usw. aus diversen Datenbanken der <a class="extlink" href="https://www.iana.org/">IANA</a> und vom <a class="extlink" href="http://www.unicode.org/">Unicode Consortium</a>.</p>
             projects: |
                 <p>Projekte, die OSM-Tags in irgendeiner Weise nutzen, zum Beispiel Editoren, Karten, Router, usw. Siehe auch die <a href="/projects">Projektliste</a>.</p>
+            chronology: |
+                <p>Anzahl der Keys/Tags über die Zeit vom <a class="extlink" href="https://planet.openstreetmap.org/planet/full-history/">history planet</a>.</p>
         updates:
             title: Aktualisierung
             intro: Die Taginfo-Daten werden regelmäßig aktualisiert.
@@ -348,7 +354,10 @@ pages:
             from_count_tooltip: Anzahl Objekte mit dem anderen Key, die auch diesen Key haben.
         geographic_distribution:
             title: Geographische Verteilung dieses Keys
-            relations: Relations haben keinen geographischen Ort, daher kann keine Karte angezeigt werden.
+            all: Diese Karte zeigt die Verteilung von Nodes und Ways mit diesem Key, Relationen werden nicht angezeigt.
+            nodes: Diese Karte zeigt die Verteilung von Nodes mit diesem Key.
+            ways: Diese Karte zeigt die Verteilung von Ways mit diesem Key.
+            relations: Die Anzeige des geographischen Orts der verschiedenen Relationstypen ist nicht so einfach, daher kann keine Karte angezeigt werden.
         wiki_pages:
             title: Wiki-Seiten zu diesem Key
             none_found: Keine Wiki-Seiten für diesen Key vorhanden.
@@ -383,9 +392,14 @@ pages:
         combinations:
             title: Kombinationen
             description: Diese Tabelle zeigt nur die häufigsten Kombinationen der häufigsten Tags.
+        chronology:
+            no_chronology: Sorry. Die Chronologie kann nur für die häufigsten Tags generiert werden.
         geographic_distribution:
             title: Geographische Verteilung dieses Tags
-            relations: Relations haben keinen geographischen Ort, daher kann keine Karte angezeigt werden.
+            all: Diese Karte zeigt die Verteilung von Nodes und Ways mit diesem Tag, Relationen werden nicht angezeigt.
+            nodes: Diese Karte zeigt die Verteilung von Nodes mit diesem Tag.
+            ways: Diese Karte zeigt die Verteilung von Ways mit diesem Tag.
+            relations: Die Anzeige des geographischen Orts der verschiedenen Relationstypen ist nicht so einfach, daher kann keine Karte angezeigt werden.
             no_map: Sorry. Die Karte kann nur für die häufigsten Tags generiert werden. Probieren Sie den overpass turbo link.
         wiki_pages:
             title: Wiki-Seiten zu diesem Tag
@@ -481,6 +495,9 @@ sources:
     projects:
         name: Projekte
         description: Externe Projekte und die OSM-Keys und -Tags, die sie benutzen.
+    chronology:
+        name: Chronologie
+        description: Anzahl der Keys/Tags über die Zeit (aus dem history planet).
 
 reports:
     characters_in_keys:

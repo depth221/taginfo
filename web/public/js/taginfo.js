@@ -21,11 +21,11 @@ function resize_box() {
     var wrapper = jQuery('.resize,.ui-tabs-panel'),
         height = jQuery(window).height();
 
-    height -= jQuery('div#header').outerHeight(true);
+    height -= jQuery('header').outerHeight(true);
     height -= jQuery('#menu').outerHeight(true);
     height -= jQuery('div.pre').outerHeight(true);
     height -= jQuery('.ui-tabs-nav').outerHeight(true);
-    height -= jQuery('div#footer').outerHeight(true);
+    height -= jQuery('footer').outerHeight(true);
 
     if (height < 440) {
         height = 440;
@@ -104,6 +104,20 @@ function translate(str, fn) {
     }
 
     return result;
+}
+
+function fmt_desc(lang, dir, desc) {
+    if (desc === null) {
+        return '';
+    }
+    return '<span lang="' + lang + '" dir="' + dir + '">' + html_escape(desc) + '</span>';
+}
+
+function fmt_status(status) {
+    if (status === null) {
+        return '';
+    }
+    return html_escape(status);
 }
 
 function fmt_key(key) {
@@ -216,14 +230,11 @@ function link_to_rtype(rtype, attr) {
     );
 }
 
-function link_to_project(id, name, icon_url, attr) {
-    if (icon_url === null) {
-        icon_url = '/img/generic_project_icon.png';
-    }
+function link_to_project(id, name) {
+    icon_url = '/api/4/project/icon?project=' + id;
     return img({ src: icon_url, width: 16, height: 16, alt: '' }) + ' ' + link(
         url_for_project(id),
-        html_escape(name),
-        attr
+        html_escape(name)
     );
 }
 
@@ -312,7 +323,7 @@ function style(styles) {
 
 function link(url, text, attrs) {
     if (attrs === undefined) {
-        attrs = {}
+        attrs = {};
     }
     attrs.href = url;
     return tag('a', text, attrs);
@@ -365,11 +376,15 @@ function fmt_wiki_image_popup(image) {
     });
 }
 
-function fmt_language(code, native_name, english_name) {
+function fmt_language(code, dir, native_name, english_name) {
     return tag('span', html_escape(code), {
         'class': 'lang',
         title: html_escape(native_name + ' (' + english_name + ')')
-    }) + ' ' + html_escape(native_name);
+    }) + ' ' +
+    tag('span', html_escape(native_name), {
+        lang: code,
+        dir: dir,
+    });
 }
 
 function fmt_type_icon(type, on_or_off) {
@@ -399,7 +414,7 @@ function fmt_with_ts(value) {
     if (value === null) {
         return '-';
     } else {
-        return value.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1&thinsp;');
+        return value.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1&#x202f;');
     }
 }
 
@@ -570,36 +585,6 @@ function table_right() {
 
 /* ============================ */
 
-function quote_double(text) {
-    return text.replace(/["\\]/gm, '\\$&');
-}
-
-function level0_editor(overpass_url_prefix, level0_url_prefix, filter, key, value) {
-    var query = '["' + quote_double(key);
-    if (value !== undefined) {
-        query += '"="' + quote_double(value);
-    }
-    query += '"];'
-
-    if (filter == 'nodes') {
-        query = 'node' + query;
-    } else if (filter == 'ways') {
-        query = 'way' + query + '>;';
-    } else if (filter == 'relations') {
-        query = 'rel' + query;
-    } else {
-        query = '(node' + query + 'way' + query + '>;rel' + query + ');';
-    }
-
-    var overpass_url = overpass_url_prefix + 'data=' + encodeURIComponent('[out:xml];' + query + 'out meta;');
-    var level0_url = level0_url_prefix + 'url=' + encodeURIComponent(overpass_url);
-    window.open(level0_url, '_blank');
-
-    return false;
-}
-
-/* ============================ */
-
 function open_help() {
     jQuery('#help').dialog({
         modal: true,
@@ -724,11 +709,6 @@ function comparison_list_change(key, value) {
 
 function activate_josm_button() {
     if (jQuery('#josm_button').length != 0) {
-        if (window.location.protocol == "https:") {
-            var url = jQuery('#josm_button')[0].href.replace('http://localhost:8111/', 'https://localhost:8112/');
-            jQuery('#josm_button')[0].href = url;
-        }
-
         jQuery('#josm_button').bind('click', function() {
             var url = jQuery('#josm_button')[0].href;
             jQuery.get(url, function(data) {
@@ -753,7 +733,7 @@ function project_tag_desc(description, icon, url) {
         out += html_escape(description) + ' ';
     }
     if (url) {
-        out += '[' + link(url, 'More...', { target: '_blank', 'class': 'extlink' }) + ']'
+        out += '[' + link(url, 'More...', { target: '_blank', 'class': 'extlink' }) + ']';
     }
     return out;
 }
@@ -817,34 +797,34 @@ jQuery(document).ready(function() {
                 switch (event.which) {
                     case 63: // ?
                         open_help();
-                        break;
+                        return false;
                     case 99: // c
                         window.location = comparison_list_url(get_comparison_list());
-                        break;
+                        return false;
                     case 102: // f
                         jQuery('input.qsbox').focus();
-                        break;
+                        return false;
                     case 104: // h
                         window.location = '/';
-                        break;
+                        return false;
                     case 107: // k
                         window.location = '/keys';
-                        break;
+                        return false;
                     case 112: // p
                         window.location = '/projects';
-                        break;
+                        return false;
                     case 114: // r
                         window.location = '/relations';
-                        break;
+                        return false;
                     case 115: // s
                         jQuery('input#search').focus();
-                        break;
+                        return false;
                     case 116: // t
                         window.location = '/tags';
-                        break;
+                        return false;
                     case 120: // x
                         window.location = '/reports';
-                        break;
+                        return false;
                 }
             }
         }
@@ -858,28 +838,28 @@ jQuery(document).ready(function() {
             switch (event.which) {
                 case 36: // home
                     jQuery('div.pFirst:visible').click();
-                    break;
+                    return false;
                 case 33: // page up
                     jQuery('div.pPrev:visible').click();
-                    break;
+                    return false;
                 case 34: // page down
                     jQuery('div.pNext:visible').click();
-                    break;
+                    return false;
                 case 35: // end
                     jQuery('div.pLast:visible').click();
-                    break;
+                    return false;
                 case 37: // arrow left
                     up();
-                    break;
+                    return false;
                 case 38: // arrow up
                     table_up();
-                    break;
+                    return false;
                 case 39: // arrow right
                     table_right();
-                    break;
+                    return false;
                 case 40: // arrow down
                     table_down();
-                    break;
+                    return false;
             }
         }
     });
@@ -911,6 +891,11 @@ jQuery(document).ready(function() {
         label: ''
     });
 
+    jQuery('#tools').slicknav({
+        prependTo: '#toolsmenu',
+        label: ''
+    });
+
     jQuery(window).resize(function() {
         jQuery('select').trigger('render');
         resize_box();
@@ -918,3 +903,77 @@ jQuery(document).ready(function() {
     });
 });
 
+function draw_chronology_chart(data, filter) {
+    var w = 900,
+        h = 400,
+        margin = { top: 10, right: 15, bottom: 60, left: 80 };
+
+    var sum = 0;
+    data.forEach(function(d) {
+        d.date = new Date(d.date);
+        if (filter == 'all') {
+            sum += d.nodes + d.ways + d.relations;
+        } else {
+            sum += d[filter];
+        }
+        d.sum = sum;
+    });
+
+    var t0 = data[0].date;
+        t1 = data[data.length - 1].date;
+
+    var max = d3.max(data, d => d.sum);
+
+    var scale_x = d3.scaleTime()
+                    .domain([t0, t1])
+                    .range([0, w]);
+
+    var axis_x = d3.axisBottom(scale_x)
+                    .tickFormat(d3.timeFormat('%b %Y'));
+
+    var scale_y = d3.scaleLinear()
+                    .domain([0, max])
+                    .range([h, 0]);
+
+    var line = d3.line().curve(d3.curveStepAfter)
+                 .x(d => scale_x(d.date))
+                 .y(d => scale_y(d.sum));
+
+    d3.select('#chart-chronology svg').remove();
+
+    var chart = d3.select('#chart-chronology').append('svg')
+                    .attr('width', w + margin.left + margin.right)
+                    .attr('height', h + margin.top + margin.bottom)
+                    .append('g')
+                        .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')')
+                        .call(function(c) {
+                            c.append('rect')
+                                .attr('width', w + 10)
+                                .attr('height', h + 10)
+                                .attr('x', -5)
+                                .attr('y', -5)
+                                .style('fill', 'white')
+                                .style('stroke', '#d0d0c8')
+                        });
+
+    chart.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(0, ' + (h + 5) + ')')
+        .call(axis_x);
+
+    chart.append('g')
+        .attr('class', 'y axis')
+        .attr('transform', 'translate(-5, 0)')
+        .call(d3.axisLeft(scale_y));
+
+    chart.append('path')
+        .datum(data)
+        .attr('fill', 'none')
+        .attr('stroke', '#083e76')
+        .attr('stroke-width', 1.5)
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-linecap', 'round')
+        .attr('d', line);
+}
+
+/* ============================ */

@@ -109,11 +109,11 @@ var taginfo_taglist = (function(){
             'fr': {
                 'key': 'Clé',
                 'value': 'Valeur',
-                'element': '',
+                'element': 'Élément',
                 'description': 'Description',
                 'image': 'Image',
                 'osmcarto_rendering': 'Icône',
-                'count': 'Count'
+                'count': 'Nombre'
             },
             'hu': {
                 'key': 'Kulcs',
@@ -187,13 +187,22 @@ var taginfo_taglist = (function(){
                 'osmcarto_rendering': 'Hình tượng',
                 'count': 'Tổng số'
             },
-            'zh-TW': {
+            'zh-hans': {
+                'key': '类别',
+                'value': '值',
+                'element': '元素',
+                'description': '说明',
+                'image': '照片',
+                'osmcarto_rendering': '地图显示',
+                'count': '计数'
+            },
+            'zh-hant': {
                 'key': '鍵',
                 'value': '值',
-                'element': '類型',
+                'element': '元素',
                 'description': '描述',
-                'image': '圖片',
-                'osmcarto_rendering': '圖示',
+                'image': '照片',
+                'osmcarto_rendering': '地圖標註',
                 'count': '計數'
             }
         };
@@ -256,7 +265,7 @@ var taginfo_taglist = (function(){
                     return link_to_noescape(url_for_wiki(d.osmcarto_rendering.image),
                                             '<img style="max-width: 120px; max-height: 120px;" src="' +
                                             d.osmcarto_rendering.thumb_url_prefix +
-                                            d.osmcarto_rendering.width +
+                                            (d.osmcarto_rendering.width - 1) +
                                             d.osmcarto_rendering.thumb_url_suffix +
                                             '" width="' +
                                             d.osmcarto_rendering.width +
@@ -270,8 +279,8 @@ var taginfo_taglist = (function(){
         'count': function(lang, data) {
             return ['node', 'way', 'relation'].map(function(type) {
                 var value = data['count_' + type + 's'].toString().
-                            replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1&thinsp;');
-                return '<div style="text-align: right">' +
+                            replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1&#x202f;');
+                return '<div style="text-align: right; white-space: nowrap;">' +
                        value + ' ' + type_image(type) + '</div>';
             }).join('');
         }

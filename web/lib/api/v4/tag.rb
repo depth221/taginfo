@@ -86,7 +86,7 @@ class Taginfo < Sinatra::Base
         :parameters => { :key => 'Tag key (required).', :value => 'Tag value (required).' },
         :result => 'PNG image.',
         :example => { :key => 'amenity', :value => 'post_box' },
-        :ui => '/tags/amenit=post_boxy#map'
+        :ui => '/tags/amenity=post_box#map'
     }) do
         get_png('tag', 'n', params[:key], params[:value])
     end
@@ -145,6 +145,7 @@ class Taginfo < Sinatra::Base
         :paging => :no,
         :result => no_paging_results([
             [:lang,             :STRING, 'Language code.'],
+            [:dir,              :STRING, 'Writing direction ("ltr", "rtl", or "auto") of description.'],
             [:language,         :STRING, 'Language name in its language.'],
             [:language_en,      :STRING, 'Language name in English.'],
             [:title,            :STRING, 'Wiki page title.'],
@@ -164,7 +165,8 @@ class Taginfo < Sinatra::Base
             [:on_relation,      :BOOL,   'Is this a tag for relations?'],
             [:tags_implies,     :ARRAY_OF_STRINGS, 'List of keys/tags implied by this tag.'],
             [:tags_combination, :ARRAY_OF_STRINGS, 'List of keys/tags that can be combined with this tag.'],
-            [:tags_linked,      :ARRAY_OF_STRINGS, 'List of keys/tags related to this tag.']
+            [:tags_linked,      :ARRAY_OF_STRINGS, 'List of keys/tags related to this tag.'],
+            [:status,           :STRING, 'Status of this key/tag.']
         ]),
         :notes => 'To get the complete thumbnail image URL, concatenate <tt>thumb_url_prefix</tt>, width of image in pixels, and <tt>thumb_url_suffix</tt>. The thumbnail image width must be smaller than <tt>width</tt>, use the <tt>image_url</tt> otherwise.',
         :example => { :key => 'highway', :value => 'residential' },
@@ -254,6 +256,39 @@ class Taginfo < Sinatra::Base
                 :icon_url         => row['icon_url']
             } }
         )
+    end
+
+    api(4, 'tag/chronology', {
+        :description => 'Get chronology of tag counts.',
+        :parameters => {
+            :key => 'Tag key (required).',
+            :value => 'Tag value (required).',
+        },
+        :paging => :no,
+        :result => no_paging_results([
+            [:date,      :TEXT, 'Date in format YYYY-MM-DD.'],
+            [:nodes,     :INT, 'Difference of number of nodes with this tag relative to previous entry.'],
+            [:ways,      :INT, 'Difference of number of ways with this tag relative to previous entry.'],
+            [:relations, :INT, 'Difference of number of relations with this tag relative to previous entry.']
+        ]),
+        :example => { :key => 'highway', :value => 'primary' },
+        :ui => '/tags/highway=primary#chronology'
+    }) do
+        if not Source.get(:chronology)
+            return generate_json_result(0, []);
+        end
+
+        key = params[:key]
+        value = params[:value]
+
+        res = @db.select('SELECT data FROM chronology.tags_chronology').
+            condition('key = ?', key).
+            condition('value = ?', value).
+            get_first_value()
+
+        data = unpack_chronology(res)
+
+        return generate_json_result(data.size(), data);
     end
 
 end

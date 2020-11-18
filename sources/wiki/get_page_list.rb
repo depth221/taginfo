@@ -11,7 +11,7 @@
 #  Two files will be written: 'all_wiki_pages.list' contains a list of all
 #  pages in the wiki (currently not used), 'interesting_wiki_pages.list'
 #  contains all wiki pages about keys, tags, or relations which will be read
-#  in in a later step.
+#  in a later step.
 #
 #  Both files have the format:
 #
@@ -43,7 +43,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 #------------------------------------------------------------------------------
 

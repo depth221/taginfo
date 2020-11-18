@@ -33,7 +33,7 @@ readonly LOGFILE=$(date +%Y%m%dT%H%M)
 mkdir -p $DATADIR/log
 exec >$DATADIR/log/$LOGFILE.log 2>&1
 
-if which pbzip2; then
+if which pbzip2 >/dev/null; then
     BZIP_COMMAND=pbzip2
 else
     BZIP_COMMAND=bzip2
@@ -118,10 +118,8 @@ compress_extra_databases() {
 
     print_message "Compressing all extra databases..."
 
-    local db
-    for db in master history search; do
-        compress_file taginfo-$db $db
-    done
+    compress_file taginfo-master master
+    compress_file taginfo-history history
 
     wait
 
@@ -132,6 +130,7 @@ create_extra_indexes() {
     print_message "Creating extra indexes..."
 
     run_sql $DATADIR/db/taginfo-db.db $SRCDIR/db/add_extra_indexes.sql
+    run_sql $DATADIR/db/taginfo-db.db $SRCDIR/db/add_ftsearch.sql
 
     print_message "Done."
 }

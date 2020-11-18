@@ -18,15 +18,17 @@ if [ -z $DATADIR ]; then
     exit 1
 fi
 
-readonly REGISTRY_URL="http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry"
+readonly REGISTRY_URL="https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry"
 readonly REGISTRY_FILE="$DATADIR/language-subtag-registry"
-readonly CLDR_URL="http://unicode.org/Public/cldr/latest/core.zip"
+readonly CLDR_URL="https://unicode.org/Public/cldr/latest/core.zip"
 readonly CLDR_FILE="$DATADIR/cldr-core.zip"
 readonly CLDR_DIR="$DATADIR/cldr"
-readonly UNICODE_SCRIPTS_URL="http://www.unicode.org/Public/UNIDATA/Scripts.txt"
+readonly UNICODE_SCRIPTS_URL="https://www.unicode.org/Public/UNIDATA/Scripts.txt"
 readonly UNICODE_SCRIPTS_FILE="$DATADIR/Scripts.txt"
-readonly PROPERTY_ALIASES_URL="http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt"
+readonly PROPERTY_ALIASES_URL="https://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt"
 readonly PROPERTY_ALIASES_FILE="$DATADIR/PropertyValueAliases.txt"
+readonly WIKIMEDIAS_URL="https://wikistats.wmcloud.org/wikimedias_csv.php"
+readonly WIKIMEDIAS_FILE="$DATADIR/wikimedias.csv"
 readonly DATABASE=$DATADIR/taginfo-languages.db
 
 source $SRCDIR/../util.sh languages
@@ -39,7 +41,7 @@ update_file() {
         return 0
     else
         error=$?
-        if [ "$error" = "22" ]; then
+        if [ "$error" = "22" -o "$error" = "7" -o "$error" = "60" ]; then
             print_message "WARNING: Getting ${url} failed. Using old version."
         else
             print_message "ERROR: Could not get ${url}: curl error: $error"
@@ -75,6 +77,13 @@ getting_unicode_scripts() {
     run_ruby $SRCDIR/import_unicode_scripts.rb $DATADIR
 }
 
+getting_wikipedia_sites() {
+    print_message "Getting wikipedia sites..."
+    update_file $WIKIMEDIAS_FILE $WIKIMEDIAS_URL
+
+    run_ruby $SRCDIR/import_wikipedias.rb $DATADIR
+}
+
 main() {
     print_message "Start languages..."
 
@@ -82,6 +91,7 @@ main() {
     getting_subtag_registry
     getting_cldr
     getting_unicode_scripts
+    getting_wikipedia_sites
     finalize_database $DATABASE $SRCDIR
 
     print_message "Done languages."

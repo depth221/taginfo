@@ -1,7 +1,7 @@
 # web/lib/ui/keys.rb
 class Taginfo < Sinatra::Base
 
-    get %r{^/keys/(.*)} do |key|
+    get %r{/keys/(.*)} do |key|
         if params[:key].nil?
             @key = key
         else
@@ -20,7 +20,7 @@ class Taginfo < Sinatra::Base
 
         @count_all_values = @db.select("SELECT count_#{@filter_type} FROM db.keys").condition('key = ?', @key).get_first_i
 
-        @desc = wrap_description(t.pages.key, get_key_description(r18n.locale.code, @key))
+        @desc = wrap_description(t.pages.key, get_key_description(@key))
 
         @db.select("SELECT width, height, image_url, thumb_url_prefix, thumb_url_suffix FROM wiki.wikipages LEFT OUTER JOIN wiki.wiki_images USING(image) WHERE lang=? AND key=? AND value IS NULL UNION SELECT width, height, image_url, thumb_url_prefix, thumb_url_suffix FROM wiki.wikipages LEFT OUTER JOIN wiki.wiki_images USING(image) WHERE lang='en' AND key=? AND value IS NULL LIMIT 1", r18n.locale.code, @key, @key).
             execute() do |row|
@@ -34,9 +34,9 @@ class Taginfo < Sinatra::Base
             execute().map{ |row| { 'value' => row['value'], 'count' => row['count'].to_i } }
 
         # add "(other)" label for the rest of the values
-        sum = @prevalent_values.inject(0){ |sum, x| sum += x['count'] }
-        if sum < @count_all_values
-            @prevalent_values << { 'value' => '(other)', 'count' => @count_all_values - sum }
+        total = @prevalent_values.inject(0){ |sum, x| sum += x['count'] }
+        if total < @count_all_values
+            @prevalent_values << { 'value' => '(other)', 'count' => @count_all_values - total }
         end
 
         @wiki_count = @db.count('wiki.wikipages').condition('key=? AND value IS NULL', @key).get_first_i
